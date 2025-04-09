@@ -153,7 +153,7 @@
   <img id="raccoon" src="https://i.ibb.co/9mzZ2Gsh/Polish-20250409-115814160.png" alt="Raccoin" onclick="klikkaa()">
   <p>Pisteet: <span id="pisteet">0</span></p>
 
-  <button id="menuButton" onclick="avaaValikko()">Pelivalikko</button>
+  <button onclick="avaaValikko()">Pelivalikko</button>
   <button onclick="avaaKoti()">Pesukarhun koti</button>
 
   <div id="valikkoTausta">
@@ -197,17 +197,20 @@
   <audio id="winSound" src="win.mp3" preload="auto"></audio>
 
   <script>
-    let pisteet = 0;
-    let tuplaKlikkaus = false;
-    let tehoKlikkaus = false;
-    let tuplaOstettu = false;
-    let tehoOstettu = false;
-    let kaivosTaso = 1;
-    let kaivosTuotto = 10;
-    let kaivosHinta = 50;
-    let voittoKerroin = 1.0;
-    let kaivosAktiivinen = false;
-    let kaivosLoppu = 0;
+    let data = JSON.parse(localStorage.getItem('raccoinData')) || {
+      pisteet: 0,
+      tuplaKlikkaus: false,
+      tehoKlikkaus: false,
+      tuplaOstettu: false,
+      tehoOstettu: false,
+      kaivosTaso: 1,
+      kaivosTuotto: 10,
+      kaivosHinta: 50,
+      kaivosAktiivinen: false,
+      kaivosLoppu: 0
+    };
+
+    let { pisteet, tuplaKlikkaus, tehoKlikkaus, tuplaOstettu, tehoOstettu, kaivosTaso, kaivosTuotto, kaivosHinta, kaivosAktiivinen, kaivosLoppu } = data;
 
     const esineet = [
       { nimi: "Pizza", kuva: "pizza.png", voitto: 50 },
@@ -218,8 +221,16 @@
       { nimi: "Tyhjä", kuva: "tyhjä.png", voitto: 0 }
     ];
 
+    function tallenna() {
+      localStorage.setItem('raccoinData', JSON.stringify({
+        pisteet, tuplaKlikkaus, tehoKlikkaus, tuplaOstettu, tehoOstettu,
+        kaivosTaso, kaivosTuotto, kaivosHinta, kaivosAktiivinen, kaivosLoppu
+      }));
+    }
+
     function paivitaPisteet() {
       document.getElementById("pisteet").textContent = pisteet;
+      tallenna();
     }
 
     function klikkaa() {
@@ -256,6 +267,24 @@
       });
       if (id === "kaivos") paivitaKaivos();
       if (id === "slotti") paivitaSlotti();
+    }
+
+    function avaaValikko() {
+      document.getElementById("valikkoTausta").style.display = "block";
+      document.getElementById("valikkoTausta").classList.add("nakyva");
+    }
+
+    function suljeValikko() {
+      document.getElementById("valikkoTausta").style.display = "none";
+      document.getElementById("valikkoTausta").classList.remove("nakyva");
+    }
+
+    function avaaKoti() {
+      document.getElementById("kotiTausta").style.display = "block";
+    }
+
+    function suljeKoti() {
+      document.getElementById("kotiTausta").style.display = "none";
     }
 
     function paivitaKaivos() {
@@ -302,53 +331,29 @@
         pisteet -= 20;
         paivitaPisteet();
         document.getElementById("spinSound").play();
-
         for (let i = 1; i <= 3; i++) {
           const reel = document.getElementById(`reel${i}`);
           reel.innerHTML = "";
           reel.style.animation = "spinreel 3s linear";
         }
-
         const slotValues = [0, 0, 0].map(() => esineet[Math.floor(Math.random() * esineet.length)]);
-
         setTimeout(() => {
           slotValues.forEach((val, i) => {
             const reel = document.getElementById(`reel${i + 1}`);
-            reel.innerHTML = `<img src="${val.kuva}" alt="${val.nimi}">`;
-            reel.style.animation = "none";
+            const img = document.createElement("img");
+            img.src = val.kuva;
+            reel.innerHTML = "";
+            reel.appendChild(img);
           });
-
-          if (slotValues.every(v => v.nimi === slotValues[0].nimi)) {
-            let voitto = Math.floor(slotValues[0].voitto * voittoKerroin);
-            pisteet += voitto;
-            voittoKerroin *= 1.1;
-            document.getElementById("winSound").play();
-          }
-
+          const voitto = slotValues[0].nimi === slotValues[1].nimi && slotValues[1].nimi === slotValues[2].nimi ? slotValues[0].voitto : 0;
+          pisteet += voitto;
+          if (voitto > 0) document.getElementById("winSound").play();
           paivitaPisteet();
         }, 3000);
       }
     }
 
-    function avaaValikko() {
-      document.getElementById("valikkoTausta").style.display = "block";
-      setTimeout(() => document.getElementById("valikkoTausta").classList.add("nakyva"), 10);
-    }
-
-    function suljeValikko() {
-      document.getElementById("valikkoTausta").classList.remove("nakyva");
-      setTimeout(() => document.getElementById("valikkoTausta").style.display = "none", 500);
-    }
-
-    function avaaKoti() {
-      document.getElementById("kotiTausta").style.display = "block";
-      setTimeout(() => document.getElementById("kotiTausta").classList.add("nakyva"), 10);
-    }
-
-    function suljeKoti() {
-      document.getElementById("kotiTausta").classList.remove("nakyva");
-      setTimeout(() => document.getElementById("kotiTausta").style.display = "none", 500);
-    }
+    paivitaPisteet();
   </script>
 </body>
 </html>
