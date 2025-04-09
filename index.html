@@ -42,19 +42,6 @@
       filter: drop-shadow(0 0 20px white);
     }
 
-    .shake {
-      animation: shake 0.3s;
-    }
-
-    @keyframes shake {
-      0% { transform: translate(1px, 1px) rotate(0deg); }
-      20% { transform: translate(-1px, -2px) rotate(-1deg); }
-      40% { transform: translate(-3px, 0px) rotate(1deg); }
-      60% { transform: translate(3px, 2px) rotate(0deg); }
-      80% { transform: translate(1px, -1px) rotate(1deg); }
-      100% { transform: translate(-1px, 2px) rotate(-1deg); }
-    }
-
     .laatikko {
       background-color: rgba(30, 0, 30, 0.7);
       border: 2px solid #cc0055;
@@ -72,7 +59,7 @@
       border: 1px solid #cc0055;
       border-radius: 8px;
       padding: 10px 20px;
-      margin-top: 10px;
+      margin: 5px;
       cursor: pointer;
       font-family: 'Share Tech Mono', monospace;
       transition: background 0.2s ease;
@@ -82,232 +69,285 @@
       background-color: #77004d;
     }
 
-    #kaivosAnimaatio {
-      text-align: center;
-      margin: 10px;
+    #valikkoTausta {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 100;
     }
 
-    .pyoriva-kuva {
+    #valikkoIkkuna {
+      background-color: rgba(30, 0, 30, 0.9);
+      border: 2px solid #cc0055;
+      border-radius: 12px;
+      width: 80%;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      position: relative;
+      top: -100%;
+      transition: top 0.5s ease;
+      box-shadow: 0 0 30px #cc0055;
+    }
+
+    #valikkoTausta.nakyva #valikkoIkkuna {
+      top: 100px;
+    }
+
+    .suljeValikko {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: crimson;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 10px crimson;
+      transition: transform 0.3s ease;
+    }
+
+    .suljeValikko:hover {
+      transform: rotate(90deg);
+    }
+
+    .kaivosAnimaatio {
       width: 100px;
+      margin: 10px auto;
       animation: pyori 2s linear infinite;
-      filter: drop-shadow(0 0 10px crimson);
     }
 
     @keyframes pyori {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    .piilossa {
-      display: none;
-    }
-
-    #slotMachine {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     .reel {
-      width: 70px;
-      height: 70px;
-      margin: 0 10px;
-      background: #1a001a;
+      display: inline-block;
+      width: 80px;
+      height: 80px;
+      margin: 5px;
+      background-color: #220022;
       border: 2px solid #cc0055;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: spin-reel 0.5s ease-in-out;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #cc0055;
+      overflow: hidden;
     }
 
     .reel img {
-      max-width: 60px;
-      max-height: 60px;
-    }
-
-    @keyframes spin-reel {
-      0% { transform: rotateX(0); }
-      50% { transform: rotateX(180deg); }
-      100% { transform: rotateX(360deg); }
-    }
-
-    #voitto {
-      margin-top: 10px;
-      font-size: 1.2em;
-      color: #a0ffa0;
-    }
-
-    .particle {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      background: rgba(255, 0, 100, 0.8);
-      border-radius: 50%;
-      pointer-events: none;
-      animation: fly 1s ease-out forwards;
-      z-index: 5;
-    }
-
-    @keyframes fly {
-      0% { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
   </style>
 </head>
 <body>
   <h1>Raccoin Clicker</h1>
-  <img id="raccoon" src="https://i.ibb.co/9mzZ2Gsh/Polish-20250409-115814160.png" alt="Raccoin" onclick="klikkaa(event)">
+  <img id="raccoon" src="https://i.ibb.co/9mzZ2Gsh/Polish-20250409-115814160.png" alt="Raccoin" onclick="klikkaa()">
   <p>Pisteet: <span id="pisteet">0</span></p>
 
-  <div class="laatikko">
-    <h3>Parannukset</h3>
-    <button onclick="ostaTuplaKlikkaus()">Osta tuplaklikkaus (hinta: <span id="tuplaHinta">10</span>)</button><br>
-    <button onclick="ostaTehoKlikkaus()">Osta tehoklikkaus (hinta: <span id="tehoHinta">25</span>)</button>
-  </div>
+  <button id="menuButton" onclick="avaaValikko()">Pelivalikko</button>
+  <button onclick="avaaKoti()">Pesukarhun koti</button>
 
-  <div class="laatikko">
-    <h3>Kaivos</h3>
-    <button onclick="aloitaKaivos()">Aloita kaivaminen</button>
-    <div id="kaivosAnimaatio" class="piilossa">
-      <img src="https://i.ibb.co/4RnWbFLD/Polish-20250408-213340783.png" alt="Kaivostoiminta" class="pyoriva-kuva" />
+  <div id="valikkoTausta">
+    <div id="valikkoIkkuna">
+      <button class="suljeValikko" onclick="suljeValikko()">X</button>
+      <div class="laatikko">
+        <button onclick="naytaAlavalikko('kaivos')">Kaivos</button>
+        <button onclick="naytaAlavalikko('slotti')">Slottikone</button>
+      </div>
+      <div id="kaivos" class="laatikko" style="display:none"></div>
+      <div id="slotti" class="laatikko" style="display:none"></div>
     </div>
-    <p>Taso: <span id="kaivosTaso">1</span></p>
-    <p>Hinta: <span id="kaivosHinta">50</span> pistettä</p>
-    <button onclick="paivitaKaivos()">Päivitä kaivos</button>
   </div>
 
-  <div class="laatikko">
-    <h3>Slottikone</h3>
-    <div id="slotMachine">
-      <div class="reel" id="reel1"></div>
-      <div class="reel" id="reel2"></div>
-      <div class="reel" id="reel3"></div>
+  <div id="kotiTausta" style="display:none">
+    <div id="valikkoIkkuna">
+      <button class="suljeValikko" onclick="suljeKoti()">X</button>
+      <div class="laatikko">
+        <button onclick="naytaAlavalikko('parannukset')">Parannukset</button>
+        <button onclick="naytaAlavalikko('taso')">Pesukarhun taso</button>
+        <button onclick="naytaAlavalikko('esineet')">Kerätyt esineet</button>
+      </div>
+      <div id="parannukset" class="laatikko" style="display:none">
+        <h3>Parannukset</h3>
+        <button onclick="ostaTuplaKlikkaus()">Tuplaklikkaus (10)</button>
+        <button onclick="ostaTehoKlikkaus()">Tehoklikkaus (25)</button>
+      </div>
+      <div id="taso" class="laatikko" style="display:none">
+        <h3>Pesukarhun taso</h3>
+        <p>Taso määräytyy klikkausten ja kaivostoiminnan mukaan (tulossa!)</p>
+      </div>
+      <div id="esineet" class="laatikko" style="display:none">
+        <h3>Kerätyt esineet</h3>
+        <p>Tänne ilmestyvät kaikki arvokkaat löydöt slotista (tulossa!)</p>
+      </div>
     </div>
-    <button onclick="pyoritaSlotti()">Pyöritä (20 pistettä)</button>
-    <div id="voitto"></div>
   </div>
 
-  <!-- Äänet -->
   <audio id="clickSound" src="click.mp3" preload="auto"></audio>
   <audio id="spinSound" src="spin.mp3" preload="auto"></audio>
   <audio id="winSound" src="win.mp3" preload="auto"></audio>
-  <audio id="bgMusic" src="music.mp3" autoplay loop preload="auto"></audio>
 
   <script>
     let pisteet = 0;
     let tuplaKlikkaus = false;
     let tehoKlikkaus = false;
+    let tuplaOstettu = false;
+    let tehoOstettu = false;
     let kaivosTaso = 1;
+    let kaivosTuotto = 10;
     let kaivosHinta = 50;
-    let tuplaHinta = 10;
-    let tehoHinta = 25;
+    let voittoKerroin = 1.0;
+    let kaivosAktiivinen = false;
+    let kaivosLoppu = 0;
 
     const esineet = [
-      { nimi: "Pizza", kuva: "pizza.png" },
-      { nimi: "Kala", kuva: "fish.png" },
-      { nimi: "Banaani", kuva: "banana.png" },
-      { nimi: "Kolikko", kuva: "coin.png" },
-      { nimi: "Timantti", kuva: "Diamond.png" },
-      { nimi: "Tyhjä", kuva: "tyhjä.png" }
+      { nimi: "Pizza", kuva: "pizza.png", voitto: 50 },
+      { nimi: "Kala", kuva: "fish.png", voitto: 40 },
+      { nimi: "Banaani", kuva: "banana.png", voitto: 30 },
+      { nimi: "Kolikko", kuva: "coin.png", voitto: 20 },
+      { nimi: "Timantti", kuva: "Diamond.png", voitto: 100 },
+      { nimi: "Tyhjä", kuva: "tyhjä.png", voitto: 0 }
     ];
 
     function paivitaPisteet() {
       document.getElementById("pisteet").textContent = pisteet;
     }
 
-    function klikkaa(event) {
+    function klikkaa() {
       document.getElementById("clickSound").play();
-
       let lisays = 1;
       if (tuplaKlikkaus) lisays *= 2;
       if (tehoKlikkaus) lisays *= 5;
       pisteet += lisays;
       paivitaPisteet();
-
-      const raccoon = document.getElementById("raccoon");
-      raccoon.classList.add("shake");
-      setTimeout(() => raccoon.classList.remove("shake"), 300);
-
-      for (let i = 0; i < 10; i++) {
-        let partikkeli = document.createElement("div");
-        partikkeli.classList.add("particle");
-        partikkeli.style.left = (event.clientX + (Math.random() * 50 - 25)) + "px";
-        partikkeli.style.top = (event.clientY + (Math.random() * 50 - 25)) + "px";
-        document.body.appendChild(partikkeli);
-        setTimeout(() => partikkeli.remove(), 1000);
-      }
     }
 
     function ostaTuplaKlikkaus() {
-      if (pisteet >= tuplaHinta) {
-        pisteet -= tuplaHinta;
+      if (!tuplaOstettu && pisteet >= 10) {
+        pisteet -= 10;
         tuplaKlikkaus = true;
-        tuplaHinta = Math.floor(tuplaHinta * 1.5);
-        document.getElementById("tuplaHinta").textContent = tuplaHinta;
+        tuplaOstettu = true;
         paivitaPisteet();
       }
     }
 
     function ostaTehoKlikkaus() {
-      if (pisteet >= tehoHinta) {
-        pisteet -= tehoHinta;
+      if (!tehoOstettu && pisteet >= 25) {
+        pisteet -= 25;
         tehoKlikkaus = true;
-        tehoHinta = Math.floor(tehoHinta * 1.5);
-        document.getElementById("tehoHinta").textContent = tehoHinta;
+        tehoOstettu = true;
         paivitaPisteet();
       }
     }
 
-    function aloitaKaivos() {
-      if (pisteet >= kaivosHinta) {
-        pisteet -= kaivosHinta;
-        kaivosTaso++;
-        document.getElementById("kaivosTaso").textContent = kaivosTaso;
-        kaivosHinta = Math.floor(kaivosHinta * 1.5);
-        document.getElementById("kaivosHinta").textContent = kaivosHinta;
-        document.getElementById("kaivosAnimaatio").classList.remove("piilossa");
-        paivitaPisteet();
-      }
+    function naytaAlavalikko(id) {
+      ["kaivos", "slotti", "parannukset", "taso", "esineet"].forEach(nimi => {
+        const el = document.getElementById(nimi);
+        if (el) el.style.display = (nimi === id) ? "block" : "none";
+      });
+      if (id === "kaivos") paivitaKaivos();
+      if (id === "slotti") paivitaSlotti();
     }
 
     function paivitaKaivos() {
-      if (pisteet >= kaivosHinta) {
+      let animaatio = kaivosAktiivinen ? '<img class="kaivosAnimaatio" src="https://i.ibb.co/Wp2R8Dxm/Polish-20250408-213340783.png" alt="Kaivos">' : '';
+      const sisalto = `${animaatio}<p>Taso: ${kaivosTaso}</p><button onclick="aloitaKaivos()">Aloita kaivostoiminta (${kaivosHinta})</button>`;
+      document.getElementById("kaivos").innerHTML = sisalto;
+    }
+
+    function aloitaKaivos() {
+      if (pisteet >= kaivosHinta && !kaivosAktiivinen) {
         pisteet -= kaivosHinta;
         kaivosTaso++;
-        document.getElementById("kaivosTaso").textContent = kaivosTaso;
+        kaivosTuotto *= 1.1;
         kaivosHinta = Math.floor(kaivosHinta * 1.5);
-        document.getElementById("kaivosHinta").textContent = kaivosHinta;
+        kaivosAktiivinen = true;
+        kaivosLoppu = Date.now() + 3 * 60 * 60 * 1000;
+        paivitaKaivos();
         paivitaPisteet();
       }
+    }
+
+    setInterval(() => {
+      if (kaivosAktiivinen && Date.now() < kaivosLoppu) {
+        pisteet += Math.floor(kaivosTaso * (kaivosTuotto / 10));
+        paivitaPisteet();
+      } else if (kaivosAktiivinen) {
+        kaivosAktiivinen = false;
+        paivitaKaivos();
+      }
+    }, 3000);
+
+    function paivitaSlotti() {
+      document.getElementById("slotti").innerHTML = `
+        <div id="slotMachine">
+          <div class="reel" id="reel1"></div>
+          <div class="reel" id="reel2"></div>
+          <div class="reel" id="reel3"></div>
+        </div>
+        <button onclick="pyoritaSlotti()">Pyöritä (20 pistettä)</button>`;
     }
 
     function pyoritaSlotti() {
       if (pisteet >= 20) {
         pisteet -= 20;
         paivitaPisteet();
-
         document.getElementById("spinSound").play();
 
-        let slotValues = [];
-        for (let i = 0; i < 3; i++) {
-          slotValues.push(esineet[Math.floor(Math.random() * esineet.length)]);
+        for (let i = 1; i <= 3; i++) {
+          const reel = document.getElementById(`reel${i}`);
+          reel.innerHTML = "";
+          reel.style.animation = "spinreel 3s linear";
         }
 
-        for (let i = 0; i < 3; i++) {
-          const reel = document.getElementById("reel" + (i + 1));
-          reel.innerHTML = "<img src='" + slotValues[i].kuva + "' alt='" + slotValues[i].nimi + "' />";
-        }
+        const slotValues = [0, 0, 0].map(() => esineet[Math.floor(Math.random() * esineet.length)]);
 
-        if (slotValues[0].nimi === slotValues[1].nimi && slotValues[1].nimi === slotValues[2].nimi) {
-          document.getElementById("winSound").play();
-          document.getElementById("voitto").textContent = "Voitit " + slotValues[0].nimi + "!";
-          pisteet += 50;
+        setTimeout(() => {
+          slotValues.forEach((val, i) => {
+            const reel = document.getElementById(`reel${i + 1}`);
+            reel.innerHTML = `<img src="${val.kuva}" alt="${val.nimi}">`;
+            reel.style.animation = "none";
+          });
+
+          if (slotValues.every(v => v.nimi === slotValues[0].nimi)) {
+            let voitto = Math.floor(slotValues[0].voitto * voittoKerroin);
+            pisteet += voitto;
+            voittoKerroin *= 1.1;
+            document.getElementById("winSound").play();
+          }
+
           paivitaPisteet();
-        } else {
-          document.getElementById("voitto").textContent = "Ei voittoa tällä kertaa.";
-        }
+        }, 3000);
       }
+    }
+
+    function avaaValikko() {
+      document.getElementById("valikkoTausta").style.display = "block";
+      setTimeout(() => document.getElementById("valikkoTausta").classList.add("nakyva"), 10);
+    }
+
+    function suljeValikko() {
+      document.getElementById("valikkoTausta").classList.remove("nakyva");
+      setTimeout(() => document.getElementById("valikkoTausta").style.display = "none", 500);
+    }
+
+    function avaaKoti() {
+      document.getElementById("kotiTausta").style.display = "block";
+      setTimeout(() => document.getElementById("kotiTausta").classList.add("nakyva"), 10);
+    }
+
+    function suljeKoti() {
+      document.getElementById("kotiTausta").classList.remove("nakyva");
+      setTimeout(() => document.getElementById("kotiTausta").style.display = "none", 500);
     }
   </script>
 </body>
