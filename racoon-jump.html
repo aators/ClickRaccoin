@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Racoon Jump</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: linear-gradient(to top, #000000, #1a1a1a);
+    }
+
+    #startBtn, #restartBtn, #leftBtn, #rightBtn {
+      position: absolute;
+      font-size: 20px;
+      background-color: crimson;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 15px;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    #startBtn, #restartBtn {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #restartBtn {
+      display: none;
+    }
+
+    #leftBtn {
+      bottom: 20px;
+      left: 10%;
+    }
+
+    #rightBtn {
+      bottom: 20px;
+      right: 10%;
+    }
+
+    #scoreDisplay, #heightDisplay {
+      position: absolute;
+      top: 10px;
+      font-size: 22px;
+      color: white;
+      font-family: sans-serif;
+      padding: 5px 10px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 10px;
+    }
+
+    #scoreDisplay {
+      left: 10px;
+    }
+
+    #heightDisplay {
+      right: 10px;
+    }
+
+    .collectEffect {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: radial-gradient(circle, gold, transparent);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: glitter 0.6s ease-out forwards;
+    }
+
+    @keyframes glitter {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="375" height="667"></canvas>
+<button id="startBtn">Aloita peli</button>
+<button id="restartBtn">Peli päättyi - Aloita alusta</button>
+<button id="leftBtn">Vasen</button>
+<button id="rightBtn">Oikea</button>
+<div id="scoreDisplay">Pisteet: 0</div>
+<div id="heightDisplay">Korkeus: 0</div>
+
+<audio id="jumpSound" src="jump.mp3" preload="auto"></audio>
+<audio id="collectSound" src="kerää.mp3" preload="auto"></audio>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+const scoreDisplay = document.getElementById("scoreDisplay");
+const heightDisplay = document.getElementById("heightDisplay");
+const jumpSound = document.getElementById("jumpSound");
+const collectSound = document.getElementById("collectSound");
+
+let doodle, platforms, items, score, highPoint, gameRunning, velocityY;
+const gravity = 0.4;
+const jumpVelocity = -10;
+const moveSpeed = 3;
+const platformCount = 8;
+const itemTypes = ['pizza', 'fish', 'banana', 'coin', 'diamond'];
+let images = {};
+
+function resetGame() {
+  doodle = {
+    x: canvas.width / 2 - 20,
+    y: canvas.height - 100,
+    width: 40,
+    height: 60,
+    dx: 0,
+    dy: 0
+  };
+  velocityY = 0;
+  score = parseInt(localStorage.getItem("racoon_score")) || 0;
+  highPoint = canvas.height - 100;
+  platforms = [{x: 0, y: canvas.height - 20, w: canvas.width, h: 15, moving: false, dir: 1}];
+  items = [];
+  for (let i = 1; i < platformCount; i++) {
+    spawnPlatform(platforms[platforms.length - 1].y);
+  }
+  updateScore();
+}
+
+function updateScore() {
+  scoreDisplay.innerText = "Pisteet: " + score;
+  localStorage.setItem("racoon_score", score);
+}
+
+function spawnPlatform(yOffset) {
+  const w = 60;
+  const x = Math.random() * (canvas.width - w);
+  const y = yOffset - 80;
+  const moving = Math.random() < 0.3;
+  platforms.push({x, y, w, h: 15, moving, dir: 1});
+
+  if (Math.random() < 0.5) {
+    const item = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+    items.push({type: item, x: x + 15, y: y - 25, w: 30, h: 30});
+  }
+}
+
+function loadImages(callback) {
+  let loaded = 0;
+  const total = itemTypes.length + 1;
+  itemTypes.forEach(type => {
+    const img = new Image();
+    img.src = `${type}.png`;
+    img.onload = () => {
+      images[type] = img;
+      if (++loaded === total) callback();
+    };
+  });
+  const raccoon = new Image();
+  raccoon.src = "https://i.ibb.co/7dHfKQy2/Polish-20250408-213340783.png";
+  raccoon.onload = () => {
+    images.raccoon = raccoon;
+    if (++loaded === total) callback();
+  };
+}
+
+function createCollectEffect(x, y) {
+  const effect = document.createElement("div");
+  effect.className = "collectEffect";
+  effect.style.left = x + "px";
+  effect.style.top = y + "px";
+  document.body.appendChild(effect);
+  setTimeout(() => effect.remove(), 600);
+}
+
+function update() {
+  doodle.x += doodle.dx;
+  doodle.x = Math.max(0, Math.min(canvas.width - doodle.width, doodle.x));
+
+  doodle.dy += gravity;
+  doodle.y += doodle.dy;
+
+  if (doodle.y < highPoint) {
+    highPoint = doodle.y;
+  }
+
+  for (let p of platforms) {
+    if (p.moving) {
+      p.x += p.dir * 1.2;
+      if (p.x < 0 || p.x + p.w > canvas.width) p.dir *= -1;
+    }
+    if (
+      doodle.dy > 0 &&
+      doodle.x + doodle.width > p.x &&
+      doodle.x < p.x + p.w &&
+      doodle.y + doodle.height > p.y &&
+      doodle.y + doodle.height < p.y + p.h
+    ) {
+      doodle.dy = jumpVelocity;
+      jumpSound.play();
+    }
+  }
+
+  items = items.filter(i => {
+    if (
+      doodle.x < i.x + i.w &&
+      doodle.x + doodle.width > i.x &&
+      doodle.y < i.y + i.h &&
+      doodle.y + doodle.height > i.y
+    ) {
+      collectSound.play();
+      createCollectEffect(i.x, i.y);
+      score += 5;
+      updateScore();
+      return false;
+    }
+    return true;
+  });
+
+  while (platforms[platforms.length - 1].y > -100) {
+    spawnPlatform(platforms[platforms.length - 1].y);
+  }
+
+  platforms = platforms.filter(p => p.y < canvas.height + 100);
+  items = items.filter(i => i.y < canvas.height + 100);
+
+  if (doodle.y > canvas.height) {
+    gameRunning = false;
+    restartBtn.style.display = "block";
+  }
+
+  platforms.forEach(p => {
+    p.y += gravity;
+  });
+  items.forEach(i => {
+    i.y += gravity;
+  });
+
+  heightDisplay.innerText = "Korkeus: " + Math.round(canvas.height - highPoint);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  platforms.forEach(p => {
+    ctx.fillStyle = p.moving ? "orange" : "crimson";
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  });
+
+  items.forEach(i => {
+    ctx.drawImage(images[i.type], i.x, i.y, i.w, i.h);
+  });
+
+  ctx.drawImage(images.raccoon, doodle.x, doodle.y, doodle.width, doodle.height);
+}
+
+function gameLoop() {
+  if (gameRunning) {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+}
+
+// Ohjaus
+leftBtn.onmousedown = () => doodle.dx = -moveSpeed;
+rightBtn.onmousedown = () => doodle.dx = moveSpeed;
+leftBtn.onmouseup = rightBtn.onmouseup = () => doodle.dx = 0;
+
+// Nappien toiminnot
+startBtn.onclick = () => {
+  startBtn.style.display = "none";
+  restartBtn.style.display = "none";
+  resetGame();
+  gameRunning = true;
+  gameLoop();
+};
+
+restartBtn.onclick = () => {
+  restartBtn.style.display = "none";
+  resetGame();
+  gameRunning = true;
+  gameLoop();
+};
+
+loadImages(() => {
+  updateScore();
+});
+</script>
+</body>
+</html>

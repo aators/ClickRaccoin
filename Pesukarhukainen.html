@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Racoon Jump</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: linear-gradient(to top, #000000, #1a1a1a);
+    }
+
+    #startBtn, #restartBtn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px 40px;
+      font-size: 24px;
+      background-color: red;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    #scoreDisplay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 24px;
+      color: white;
+      font-family: sans-serif;
+    }
+
+    #heightDisplay {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      color: white;
+      font-family: sans-serif;
+    }
+
+    .collectEffect {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: radial-gradient(circle, gold, transparent);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: glitter 0.6s ease-out forwards;
+    }
+
+    @keyframes glitter {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+
+    .floor {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 30px;
+      background: #2a2a2a;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="375" height="667"></canvas>
+<button id="startBtn">Aloita peli</button>
+<button id="restartBtn" style="display:none;">Peli päättyi - Aloita alusta</button>
+<div id="scoreDisplay">Pisteet: 0</div>
+<div id="heightDisplay">Korkeus: 0</div>
+
+<audio id="jumpSound" src="jump.mp3" preload="auto"></audio>
+<audio id="collectSound" src="kerää.mp3" preload="auto"></audio>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
+const scoreDisplay = document.getElementById("scoreDisplay");
+const heightDisplay = document.getElementById("heightDisplay");
+const jumpSound = document.getElementById("jumpSound");
+const collectSound = document.getElementById("collectSound");
+
+let gameRunning = false;
+let doodle, platforms, items, score, highPoint, velocityY, accelX;
+let images = {};
+const itemTypes = ['pizza', 'fish', 'banana', 'coin', 'diamond'];
+let gravity = 0.5;
+let jumpVelocity = -12;
+let maxTiltSpeed = 5;
+let tiltSpeed = 0.2; // Kalibroitu liikkeen kiihtyvyys pelin alussa
+let initialTiltSpeed = 0.2; // Käynnistyskiihtyvyys
+let maxAccelX = 5; // Enimmäiskiihtyvyys
+let accelFactor = 0.05; // Liikkeen asteittainen kiihtyvyys
+let floorHeight = 30; // Lattian korkeus
+let platformHeight = 15; // Palikoiden korkeus
+let scrollHeightLimit = 300; // Korkeus, jossa lattia katoaa
+
+function resetGame() {
+  // Reset everything including game state and player data
+  doodle = {
+    x: canvas.width / 2 - 20,
+    y: canvas.height - 100,
+    width: 40,
+    height: 60,
+    dx: 0,
+    dy: 0
+  };
+  velocityY = 0;
+  accelX = 0;
+  highPoint = doodle.y;
+  score = parseInt(localStorage.getItem("raccoon_score")) || 0;
+  scoreDisplay.innerText = "Pisteet: " + score;
+  platforms = [
+    {x: canvas.width / 2 - 30, y: canvas.height - floorHeight - platformHeight, w: 60, h: platformHeight}
+  ];
+  items = [];
+  tiltSpeed = initialTiltSpeed; // Reset tilt speed to initial value
+}
+
+function loadImages(callback) {
+  let loaded = 0;
+  itemTypes.forEach(type => {
+    const img = new Image();
+    img.src = type + ".png";
+    img.onload = () => {
+      images[type] = img;
+      loaded++;
+      if (loaded === itemTypes.length) callback();
+    };
+  });
+
+  // Pesukarhun kuva
+  const raccoon = new Image();
+  raccoon.src = "https://i.ibb.co/7dHfKQy2/Polish-20250408-213340783.png";
+  raccoon.onload = () => {
+    images.raccoon = raccoon;
+    if (++loaded === itemTypes.length + 1) callback();
+  };
+}
+
+function spawnPlatform(yOffset = 0) {
+  const x = Math.random() * (canvas.width - 60);
+  const y = yOffset - platformHeight - 100;
+  platforms.push({x: x, y: y, w: 60, h: platformHeight});
+  if (Math.random() < 0.6) {
+    const item = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+    items.push({type: item, x: x + 15, y: y - 25, w: 30, h: 30});
+  }
+}
+
+function createCollectEffect(x, y) {
+  const effect = document.createElement("div");
+  effect.className = "collectEffect";
+  effect.style.left = x + "px";
+  effect.style.top = y + "px";
+  document.body.appendChild(effect);
+  setTimeout(() => effect.remove(), 600);
+}
+
+function update() {
+  doodle.dy += gravity;
+  doodle.x += doodle.dx;
+
+  // Apply smoother movement
+  doodle.dx += accelX * accelFactor;
+  doodle.dx *= 0.95;
+
+  if (doodle.x + doodle.width < 0) doodle.x = canvas.width;
+  if (doodle.x > canvas.width) doodle.x = -doodle.width;
+
+  doodle.y += doodle.dy;
+
+  // Bounce from platform
+  platforms.forEach(p => {
+    if (
+      doodle.dy > 0 &&
+      doodle.x + doodle.width > p.x &&
+      doodle.x < p.x + p.w &&
+      doodle.y + doodle.height > p.y &&
+      doodle.y + doodle.height < p.y + p.h
+    ) {
+      doodle.dy = jumpVelocity;
+      jumpSound.play();
+    }
+  });
+
+  // Generate new platforms continuously (infinite scrolling)
+  while (platforms[platforms.length - 1].y > canvas.height / 2) {
+    let lastY = platforms[platforms.length - 1].y;
+    spawnPlatform(lastY);
+  }
+
+  // Collect items
+  items = items.filter(i => {
+    if (
+      doodle.x < i.x + i.w &&
+      doodle.x + doodle.width > i.x &&
+      doodle.y < i.y + i.h &&
+      doodle.y + doodle.height > i.y
+    ) {
+      collectSound.play();
+      createCollectEffect(i.x, i.y);
+      score += 5;
+      localStorage.setItem("raccoon_score", score);
+      scoreDisplay.innerText = "Pisteet: " + score;
+      return false;
+    }
+    return true;
+  });
+
+  // Scroll effect: remove the floor if the doodle goes up
+  if (doodle.y < canvas.height / 2) {
+    const offset = canvas.height / 2 - doodle.y;
+    doodle.y = canvas.height / 2;
+    platforms.forEach(p => p.y += offset);
+    items.forEach(i => i.y += offset);
+    highPoint -= offset;
+    if (highPoint < 0) {
+      score++;
+      localStorage.setItem("raccoon_score", score);
+      scoreDisplay.innerText = "Pisteet: " + score;
+    }
+  }
+
+  // Hide floor after certain height
+  if (highPoint <= -scrollHeightLimit) {
+    floorHeight = 0;
+  }
+
+  // Game over if falls down
+  if (doodle.y > canvas.height) {
+    gameRunning = false;
+    restartBtn.style.display = "block";
+  }
+
+  // Update height display
+  heightDisplay.innerText = "Korkeus: " + Math.max(0, -highPoint);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw background scroll effect
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, "#000000");
+  gradient.addColorStop(1, "#1a1a1a");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw platforms
+  ctx.fillStyle = "red";
+  platforms.forEach(p => {
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  });
+
+  // Draw items
+  items.forEach(i => {
+    ctx.drawImage(images[i.type], i.x, i.y, i.w, i.h);
+  });
+
+  // Draw raccoon
+  if (images.raccoon) {
+    ctx.drawImage(images.raccoon, doodle.x, doodle.y, doodle.width, doodle.height);
+  }
+
+  // Draw floor (if needed)
+  if (floorHeight > 0) {
+    ctx.fillStyle = "#2a2a2a";
+    ctx.fillRect(0, canvas.height - floorHeight, canvas.width, floorHeight);
+  }
+}
+
+function gameLoop() {
+  if (gameRunning) {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+}
+
+startBtn.addEventListener("click", () => {
+  startBtn.style.display = "none";
+  gameRunning = true;
+  resetGame();
+  loadImages(() => {
+    gameLoop();
+  });
+});
+
+restartBtn.addEventListener("click", () => {
+  restartBtn.style.display = "none";
+  startBtn.style.display = "block";
+  resetGame(); // Reset game before restarting
+});
+
+window.addEventListener("deviceorientation", (event) => {
+  if (!gameRunning) return;
+  accelX = event.gamma; // Calculate X-axis tilt
+
+  // Add tilt smoothing
+  accelX = Math.max(-maxAccelX, Math.min(accelX, maxAccelX));
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <title>Raccoin Clicker</title>
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Raccoin Clicker</h1>
+  <img id="raccoon" src="https://i.ibb.co/9mzZ2Gsh/Polish-20250409-115814160.png" alt="Raccoin">
+  <p>Pisteet: <span id="pisteet">0</span></p>
+
+  <button id="valikkoNappi">Pelivalikko</button>
+  <button id="kotiNappi">Pesukarhun koti</button>
+
+  <div id="valikkoTausta">
+    <div id="valikkoIkkuna">
+      <button class="suljeValikko" id="suljeValikko">X</button>
+      <div class="laatikko">
+        <button id="kaivosNappi">Kaivos</button>
+        <button id="slottiNappi">Slottikone</button>
+      </div>
+      <div id="kaivos" class="laatikko" style="display:none"></div>
+      <div id="slotti" class="laatikko" style="display:none"></div>
+    </div>
+  </div>
+
+  <div id="kotiTausta" style="display:none">
+    <div id="valikkoIkkuna">
+      <button class="suljeValikko" id="suljeKoti">X</button>
+      <div class="laatikko">
+        <button id="parannusNappi">Parannukset</button>
+        <button id="tasoNappi">Pesukarhun taso</button>
+        <button id="esineetNappi">Kerätyt esineet</button>
+      </div>
+      <div id="parannukset" class="laatikko" style="display:none">
+        <h3>Parannukset</h3>
+        <button id="tuplaNappi">Tuplaklikkaus (10)</button>
+        <button id="tehoNappi">Tehoklikkaus (25)</button>
+      </div>
+      <div id="taso" class="laatikko" style="display:none">
+        <h3>Pesukarhun taso</h3>
+        <p>Taso määräytyy klikkausten ja kaivostoiminnan mukaan (tulossa!)</p>
+      </div>
+      <div id="esineet" class="laatikko" style="display:none">
+        <h3>Kerätyt esineet</h3>
+        <p>Tänne ilmestyvät kaikki arvokkaat löydöt slotista (tulossa!)</p>
+      </div>
+    </div>
+  </div>
+
+  <audio id="clickSound" src="click.mp3" preload="auto"></audio>
+  <audio id="spinSound" src="spin.mp3" preload="auto"></audio>
+  <audio id="winSound" src="win.mp3" preload="auto"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>

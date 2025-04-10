@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Slottikone</title>
+  <style>
+    /* Tyylit */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #1e001f;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      color: red;
+      text-shadow: 0 0 10px crimson;
+    }
+
+    #slotti {
+      display: flex;
+      justify-content: space-evenly;
+      margin-top: 20px;
+    }
+
+    .kolikko {
+      width: 100px;
+      height: 100px;
+      background-color: #550033;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 10px;
+      font-size: 2em;
+      color: yellow;
+      background-size: cover;
+      background-position: center;
+    }
+
+    button {
+      background-color: #77004d;
+      padding: 15px;
+      font-size: 1.2em;
+      margin-top: 20px;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #990066;
+    }
+
+    .popup {
+      display: none;
+      background-color: rgba(30, 0, 30, 0.95);
+      position: absolute;
+      top: 60px;
+      left: 0;
+      right: 0;
+      margin: auto;
+      padding: 15px;
+      border: 2px solid #cc0055;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      z-index: 100;
+    }
+
+    .sulje {
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      background: crimson;
+      color: white;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #raccoon {
+      width: 150px;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+
+    #raccoon:active {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Slottikone</h1>
+    <p>Sinulla on <span id="pisteet">0</span> pistettä. Käytä 10 pistettä pyöritykseen!</p>
+    <div id="slotti">
+      <div class="kolikko" id="kolikko1"></div>
+      <div class="kolikko" id="kolikko2"></div>
+      <div class="kolikko" id="kolikko3"></div>
+    </div>
+
+    <button id="pyoritaBtn" onclick="pyoritaSlotti()">Pyöräytä!</button>
+
+    <!-- Voitto popup -->
+    <div id="voittoPopup" class="popup">
+      <button class="sulje" onclick="suljePopup()">X</button>
+      <h2>Voitit!</h2>
+      <p>Olet voittanut <span id="voitettuPisteet">0</span> pistettä!</p>
+      <button onclick="suljePopup()">OK</button>
+    </div>
+
+    <!-- Sulje-painike pelistä takaisin -->
+    <button onclick="suljePeli()">Sulje</button>
+  </div>
+
+  <!-- Äänitiedosto -->
+  <audio id="spinAudio" src="spin.mp3" preload="auto"></audio>
+
+  <script>
+    // Haetaan tallennettu data
+    let data = JSON.parse(localStorage.getItem("raccoinData") || "{}");
+    let pisteet = data.pisteet || 0;
+    let tokenit = data.tokenit || 0;
+    let timantit = data.timantit || 0;
+    let pelaajaTaso = data.pelaajaTaso || 1;
+
+    function tallenna() {
+      localStorage.setItem("raccoinData", JSON.stringify({ pisteet, tokenit, timantit, pelaajaTaso }));
+    }
+
+    function paivita() {
+      document.getElementById("pisteet").textContent = pisteet;
+    }
+
+    const esineet = ['pizza.png', 'fish.png', 'banana.png', 'coin.png', 'diamond.png'];
+
+    function pyoritaSlotti() {
+      if (pisteet < 10) {
+        alert('Sinulla ei ole tarpeeksi pisteitä pyöritykseen!');
+        return;
+      }
+
+      pisteet -= 10;
+      tallenna();
+      paivita();
+
+      document.getElementById("spinAudio").play();
+
+      let kolikko1 = esineet[Math.floor(Math.random() * esineet.length)];
+      let kolikko2 = esineet[Math.floor(Math.random() * esineet.length)];
+      let kolikko3 = esineet[Math.floor(Math.random() * esineet.length)];
+
+      document.getElementById("kolikko1").style.backgroundImage = `url(${kolikko1})`;
+      document.getElementById("kolikko2").style.backgroundImage = `url(${kolikko2})`;
+      document.getElementById("kolikko3").style.backgroundImage = `url(${kolikko3})`;
+
+      setTimeout(() => {
+        tarkistaVoitto(kolikko1, kolikko2, kolikko3);
+      }, 1000);
+    }
+
+    function tarkistaVoitto(k1, k2, k3) {
+      if (k1 === k2 && k2 === k3) {
+        let voittoPisteet = Math.floor(Math.random() * 50) + 10;
+        pisteet += voittoPisteet;
+        tallenna();
+        paivita();
+        naytaVoittoPopup(voittoPisteet);
+      } else {
+        alert('Ei voittoa tällä kertaa.');
+      }
+    }
+
+    function naytaVoittoPopup(voittoPisteet) {
+      document.getElementById("voitettuPisteet").textContent = voittoPisteet;
+      document.getElementById("voittoPopup").style.display = "block";
+    }
+
+    function suljePopup() {
+      document.getElementById("voittoPopup").style.display = "none";
+    }
+
+    function suljePeli() {
+      window.location.href = "Uusi.html";
+    }
+
+    paivita();
+  </script>
+</body>
+</html>

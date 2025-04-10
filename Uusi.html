@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Raccoin Clicker</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(145deg, #0a000a, #150015);
+      color: white;
+      overflow-x: hidden;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      color: red;
+      text-shadow: 0 0 10px crimson;
+    }
+
+    #ylapalkki, #alavalikko {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #220022;
+      padding: 10px;
+      font-size: 0.9em;
+      box-shadow: 0 0 10px #cc0055;
+      flex-wrap: wrap;
+    }
+
+    #alavalikko {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      justify-content: space-around;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 1em;
+      border-radius: 8px;
+      border: none;
+      background-color: #550033;
+      color: white;
+    }
+
+    button:hover {
+      background-color: #77004d;
+    }
+
+    .popup {
+      display: none;
+      background-color: rgba(30, 0, 30, 0.95);
+      position: absolute;
+      top: 60px;
+      left: 0;
+      right: 0;
+      margin: auto;
+      padding: 15px;
+      border: 2px solid #cc0055;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      z-index: 100;
+    }
+
+    .sulje {
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      background: crimson;
+      color: white;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #raccoon {
+      width: 150px;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+
+    #raccoon:active {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Äänet -->
+  <audio id="clickSound" src="click.mp3" preload="auto"></audio>
+  <audio id="music" src="music.mp3" preload="auto" loop></audio>
+  <audio id="spinSound" src="spin.mp3" preload="auto"></audio>
+
+  <!-- Yläpalkki -->
+  <div id="ylapalkki">
+    <div><b>kapinanis</b><br><span id="pelaajaTaso">TASO 1</span></div>
+    <div>Pisteet: <span id="pisteet">0</span><br>Tokenit: <span id="tokenit">0</span></div>
+    <button onclick="naytaIkkuna('lompakkoIkkuna')">Lompakko</button>
+  </div>
+
+  <!-- Etusivu -->
+  <div id="etusivu">
+    <h1>Raccoin Clicker</h1>
+    <img id="raccoon" src="https://i.ibb.co/9mzZ2Gsh/Polish-20250409-115814160.png" alt="Raccoon" onclick="klikkaa()">
+    <p>Pisteet: <span id="pisteetNaytto">0</span></p>
+  </div>
+
+  <!-- Lompakko-ikkuna -->
+  <div id="lompakkoIkkuna" class="popup">
+    <button class="sulje" onclick="suljeKaikkiIkkunat()">X</button>
+    <h2>Lompakko</h2>
+    <p>Pisteet: <span id="lompakkoPisteet">0</span></p>
+    <p>Tokenit: <span id="lompakkoTokenit">0</span></p>
+    <p>Timantit: <span id="timantit">0</span></p>
+  </div>
+
+  <!-- Pelit -->
+  <div id="pelitIkkuna" class="popup">
+    <button class="sulje" onclick="suljeKaikkiIkkunat()">X</button>
+    <h2>Pelit</h2>
+    <button onclick="naytaSlotti()">Slottikone</button>
+    <button onclick="naytaIkkuna('pesukarhukainenIkkuna')">Pesukarhukainen</button>
+    <button onclick="naytaIkkuna('estehyppelyIkkuna')">Estehyppely</button>
+    <button onclick="naytaIkkuna('kaivosIkkuna')">Kaivos (Beta)</button>
+  </div>
+
+  <!-- Lisää popupit halutuille näkymille (kehitä, koti, airdrop jne.) -->
+
+  <!-- Alavalikko -->
+  <div id="alavalikko">
+    <button onclick="naytaIkkuna('etusivu')">Etusivu</button>
+    <button onclick="naytaIkkuna('pelitIkkuna')">Pelit</button>
+    <button onclick="naytaIkkuna('kotiIkkuna')">Koti</button>
+    <button onclick="naytaIkkuna('kehitaIkkuna')">Kehitä</button>
+    <button onclick="naytaIkkuna('airdropIkkuna')">Airdrop</button>
+  </div>
+
+  <script>
+    const clickSound = document.getElementById("clickSound");
+    const music = document.getElementById("music");
+    music.volume = 0.2;
+    window.addEventListener("load", () => music.play());
+
+    let data = JSON.parse(localStorage.getItem("raccoinData") || "{}");
+    let pisteet = data.pisteet || 0;
+    let tokenit = data.tokenit || 0;
+    let timantit = data.timantit || 0;
+    let pelaajaTaso = data.pelaajaTaso || 1;
+
+    function tallenna() {
+      localStorage.setItem("raccoinData", JSON.stringify({ pisteet, tokenit, timantit, pelaajaTaso }));
+    }
+
+    function paivita() {
+      document.getElementById("pisteet").textContent = pisteet;
+      document.getElementById("tokenit").textContent = tokenit;
+      document.getElementById("pisteetNaytto").textContent = pisteet;
+      document.getElementById("lompakkoPisteet").textContent = pisteet;
+      document.getElementById("lompakkoTokenit").textContent = tokenit;
+      document.getElementById("timantit").textContent = timantit;
+      document.getElementById("pelaajaTaso").textContent = "TASO " + pelaajaTaso;
+    }
+
+    function klikkaa() {
+      pisteet++;
+      clickSound.play();
+      paivita();
+      tallenna();
+    }
+
+    function suljeKaikkiIkkunat() {
+      document.querySelectorAll('.popup').forEach(popup => popup.style.display = 'none');
+      document.getElementById("etusivu").style.display = "none";
+    }
+
+    function naytaIkkuna(ikkunaId) {
+      suljeKaikkiIkkunat();
+      const ikkuna = document.getElementById(ikkunaId);
+      if (ikkuna) {
+        ikkuna.style.display = "block";
+      }
+    }
+
+    function naytaSlotti() {
+      paivita();
+      if (pisteet >= 10) {
+        tallenna();
+        window.open('Slotti.html', '_blank');
+      } else {
+        alert('Sinulla ei ole tarpeeksi pisteitä pyöritykseen!');
+      }
+    }
+
+    // Päivitä näkymä alussa
+    window.onload = () => {
+      paivita();
+    };
+  </script>
+</body>
+</html>

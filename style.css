@@ -1,0 +1,141 @@
+body {
+  margin: 0;
+  font-family: 'Share Tech Mono', monospace;
+  background: linear-gradient(145deg, #0a000a, #150015);
+  color: white;
+  text-align: center;
+  overflow-x: hidden;
+  animation: taustavari 10s infinite alternate;
+}
+
+@keyframes taustavari {
+  0% { background: linear-gradient(145deg, #0a000a, #150015); }
+  100% { background: linear-gradient(145deg, #150015, #0a000a); }
+}
+
+h1 {
+  font-family: 'MedievalSharp', cursive;
+  font-size: 4em;
+  color: red;
+  text-shadow: 0 0 15px crimson;
+  margin-top: 20px;
+}
+
+#raccoon {
+  width: 200px;
+  cursor: pointer;
+  filter: drop-shadow(0 0 10px crimson);
+  transition: transform 0.2s ease, filter 0.2s;
+  z-index: 10;
+  position: relative;
+}
+
+#raccoon:active {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 20px white);
+}
+
+.laatikko {
+  background-color: rgba(30, 0, 30, 0.7);
+  border: 2px solid #cc0055;
+  padding: 15px;
+  border-radius: 12px;
+  margin: 15px auto;
+  width: 80%;
+  max-width: 400px;
+  box-shadow: 0 0 20px #cc0055;
+}
+
+button {
+  background-color: #550033;
+  color: white;
+  border: 1px solid #cc0055;
+  border-radius: 8px;
+  padding: 10px 20px;
+  margin: 5px;
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background-color: #77004d;
+}
+
+#valikkoTausta {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+}
+
+#valikkoIkkuna {
+  background-color: rgba(30, 0, 30, 0.9);
+  border: 2px solid #cc0055;
+  border-radius: 12px;
+  width: 80%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+  top: -100%;
+  transition: top 0.5s ease;
+  box-shadow: 0 0 30px #cc0055;
+}
+
+#valikkoTausta.nakyva #valikkoIkkuna {
+  top: 100px;
+}
+
+.suljeValikko {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: crimson;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 10px crimson;
+  transition: transform 0.3s ease;
+}
+
+.suljeValikko:hover {
+  transform: rotate(90deg);
+}
+
+.kaivosAnimaatio {
+  width: 100px;
+  margin: 10px auto;
+  animation: pyori 2s linear infinite;
+}
+
+@keyframes pyori {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.reel {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  margin: 5px;
+  background-color: #220022;
+  border: 2px solid #cc0055;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #cc0055;
+  overflow: hidden;
+}
+
+.reel img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
